@@ -1,61 +1,51 @@
-const endTime  = document.querySelector(".display__end-time");
-const leftTime = document.querySelector(".display__time-left");
-const buttons = document.querySelectorAll("button");
-const date = new Date();
-var left = 0;//剩余时间
-var end = 0;//结束时间
-var timer;//interval计时器
-leftTime.innerHTML = left;//未操作时，剩余时间显示0
+let countDown;
+const timerDisplay = document.querySelector('.display__time-left');
+const endTime = document.querySelector('.display__end-time');
+const buttons = document.querySelectorAll('[data-time]');
+function timer(seconds) {
+	clearInterval(countDown);
+	const now = Date.now();
+	const then = now + seconds * 1000;
+	dispalyTimeLeft(seconds);
+	displayEndTime(then);
+	countDown = setInterval(() => {
+		const secondsLeft = Math.round((then - Date.now()) / 1000);
+		//check if stop
+		if(secondsLeft < 0) {
+			clearInterval(countDown);
+			return;
+		}
+		dispalyTimeLeft(secondsLeft);
+	}, 1000);
+}
 
-//为button绑定点击事件
-const arr = Array.from(buttons);
-arr.map(function(item){
-    item.addEventListener('click',clickAction);
-});
+function dispalyTimeLeft(seconds) {
+	const minutes = Math.floor(seconds / 60);
+	const displaySeconds = seconds % 60;
+	const display = `${minutes}:${displaySeconds < 10 ? '0' : ''}${displaySeconds}`;
+	document.title = display;
+	timerDisplay.textContent = display;
+}
 
-//监听自定义输入
-document.customForm.addEventListener('submit',function(e){
+function displayEndTime(timestamp){
+	const end = new Date(timestamp);
+	const hour = end.getHours();
+	const minutes = end.getMinutes();
+	endTime.textContent = `Be back at ${hour > 12 ? hour - 12: hour}:${minutes < 10 ? '0':''}${minutes}`;
+}
+
+function startTimer(){
+	const seconds = parseInt(this.dataset.time);
+	timer(seconds);
+}
+
+buttons.forEach(button => {
+	button.addEventListener('click', startTimer);
+})
+
+document.customForm.addEventListener('submit', function(e){
 	e.preventDefault();
-	updateTime(this.minutes.value*60);
-	updateTimer();
-});
-
-//定义点击后的回调
-function clickAction(e){
-	let deltaTime;
-	   	deltaTime = this.dataset.time;
-	   	updateTime(deltaTime);
-
-        //点击后更新计时器
-        updateTimer();
-}
-
-
-
-//updateTime
-function updateTime(delta){
-	    left = left + parseInt(delta,0);
-        end = date.getTime() + left*1000;
-        leftTime.innerHTML = left;
-        endTime.innerHTML =new Date(end).toLocaleTimeString();
-}
-
-//每秒刷新时间
-function updateTimer(){
-	//清除以前的timer
-	if(timer){
-		clearInterval(timer);
-	}
-
-    // 设置新的Timer
-    timer = setInterval(function(){
-	if(left == 0){
-		endTime.innerHTML = 'End';
-        clearInterval(timer);
-	}else{
-		left -= 1;
-		leftTime.innerHTML = left;
-	}
-},1000);
-}
-
+	const minutes = this.minutes.value;
+	timer(minutes * 60);
+	this.reset();
+})
